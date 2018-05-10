@@ -1,0 +1,60 @@
+// BIBLIOTECAS NECESSÁRIAS
+#include <SPI.h>				// SPI Library : necessária para o Shield Ethernet.
+#include <Ethernet.h>		// Ethernet Library : para o comunicação com a nuvem.
+
+// VARIÁVEIS GLOBAIS
+
+byte mac[]  = { 0x90, 0xA2, 0xDA, 0x0E, 0x04, 0x21 }; // Endereço MAC do Shield Ethernet (olhe atrás dele).
+byte ip[] = {192,168,  0,103};
+byte gateway[] = {192,168,  0,1};
+byte subnet[] = {255,255,255,  0};  
+char server[]={"192,168,0,102"};
+
+EthernetClient client;		// Uma instância de um cliente TCP (usaremos eles para enviar os dados).
+
+void setup()
+{ 
+  Serial.begin(9600); // Prepara a porta serial para ser utilizada para depuração. 
+
+    Serial.println("Inicializando IP...");
+    Ethernet.begin(mac,ip,gateway,subnet);
+    Serial.println("feito!");
+	
+	delay(1000);
+	Serial.print("Endereço IP: ");
+	Serial.println(Ethernet.localIP()); // Imprime o endereço IP conseguido.
+}
+
+void loop()
+{
+  double vazao = 1000;
+  Serial.println(vazao);
+  Serial.println("Conectando...");
+
+EthernetClient client;
+
+if (client.connect(server,80)) {
+    Serial.print(client);
+    client.print("GET http://192.168.0.102/energy/medida.php?");
+    client.print("vazao=");
+    client.print(vazao);
+    client.println(" HTTP/1.1");
+    client.println("Host: 192.168.0.102");
+    client.println();
+    delay(500);
+
+    Serial.println("Sucesso!!!");
+    
+} else {
+  Serial.println("Falaha na conexão");
+}
+
+if (client.connected()) {
+  } else {
+  Serial.println("Desconectando");
+}
+client.stop();
+client.flush();
+delay(3000);
+}
+
