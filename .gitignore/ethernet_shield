@@ -1,60 +1,55 @@
-// BIBLIOTECAS NECESSÁRIAS
-#include <SPI.h>				// SPI Library : necessária para o Shield Ethernet.
-#include <Ethernet.h>		// Ethernet Library : para o comunicação com a nuvem.
+#include <SPI.h>
+#include <Ethernet.h>
 
-// VARIÁVEIS GLOBAIS
+byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
+IPAddress ip(192,168,0,105); //coloca o IP que vai para o Arduino ai.
+char server[] = "192.168.0.100"; 
+EthernetClient client;
+int Pulso; //Variável para a quantidade de pulsos
+double vazao; //Variável para armazenar o valor em L/min
 
-byte mac[]  = { 0x90, 0xA2, 0xDA, 0x0E, 0x04, 0x21 }; // Endereço MAC do Shield Ethernet (olhe atrás dele).
-byte ip[] = {192,168,  0,103};
-byte gateway[] = {192,168,  0,1};
-byte subnet[] = {255,255,255,  0};  
-char server[]={"192,168,0,102"};
-
-EthernetClient client;		// Uma instância de um cliente TCP (usaremos eles para enviar os dados).
-
-void setup()
-{ 
-  Serial.begin(9600); // Prepara a porta serial para ser utilizada para depuração. 
-
-    Serial.println("Inicializando IP...");
-    Ethernet.begin(mac,ip,gateway,subnet);
-    Serial.println("feito!");
-	
-	delay(1000);
-	Serial.print("Endereço IP: ");
-	Serial.println(Ethernet.localIP()); // Imprime o endereço IP conseguido.
+void setup() {
+  Serial.begin(9600);
+  Ethernet.begin(mac, ip);
+  pinMode(2, INPUT);
+  attachInterrupt(0, incrpulso, RISING); //Configura a porta digital 2, para interrupção
 }
 
-void loop()
-{
-  double vazao = 1000;
-  Serial.println(vazao);
-  Serial.println("Conectando...");
-
-EthernetClient client;
-
-if (client.connect(server,80)) {
-    Serial.print(client);
-    client.print("GET http://192.168.0.102/energy/medida.php?");
+void loop() {
+   
+  Pulso = 0; //Começa do 0 variável para contar os giros das pás internas,em segundos
+  sei(); //liga interrupção
+  delay (2000); //Espera 2 segundos
+  cli(); //Desliga interrupção
+  
+  vazao = Pulso / 5.5; //Converte para Litros/minuto
+  
+  Serial.print(vazao); //Imprime na serial o valor da vazão
+  Serial.print(" L/min - "); //Imprime L/min
+  
+  // Connect to the server (your computer or web page)  
+  if (client.connect(server, 80)) {
+    client.print("GET /energy/medida.php?");
     client.print("vazao=");
     client.print(vazao);
-    client.println(" HTTP/1.1");
-    client.println("Host: 192.168.0.102");
-    client.println();
-    delay(500);
+    client.println(" HTTP/1.0"); 
+    client.println("Host: 192.168.0.100"); //IP do pc aqui.
+    client.println("Connection: close");
+    client.println(); // Empty line
+    client.println(); // Empty line
+    client.stop();    // Closing connection to server
+  }
 
-    Serial.println("Sucesso!!!");
-    
-} else {
-  Serial.println("Falaha na conexão");
+  else {
+    Serial.println("--> connection failed\n");
+  }
+  //Dê ao servidor algum tempo para receber os dados e armazená-los. 
+  //Eu usei 10 segundos aqui. 
+  //Se você usar um pequeno atraso, o servidor pode não capturar dados porque o Arduino está transmitindo novos dados muito cedo.
+  delay(60000);
 }
 
-if (client.connected()) {
-  } else {
-  Serial.println("Desconectando");
+void incrpulso ()
+{ 
+Pulso++;
 }
-client.stop();
-client.flush();
-delay(3000);
-}
-
