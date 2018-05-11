@@ -5,8 +5,8 @@
 	$usuario='root';
 	$senha='';
 	$link = mysqli_connect($servidor,$usuario,$senha, $banco);
-
-	$horario = date('Y-m-d H:i:s');
+	date_default_timezone_set('America/Sao_Paulo');
+	$horario = date('Y-m-d H:i:s', time());
 	
 	if (isset($_GET['vazao'])) {
 		
@@ -22,10 +22,6 @@
 	}else{
 
 
-		echo 'ERRO AO GRVAR NO BANCO DE DADOS!';
-
-	}
-
-	
-	
+		echo 'ERRO AO GRAVAR NO BANCO DE DADOS!';
+	}	
 ?>
