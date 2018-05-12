@@ -25,14 +25,14 @@ void loop() {
   vazao = Pulso / 5.5; //Converte para Litros/minuto
   
   Serial.print(vazao); //Imprime na serial o valor da vazão
-  Serial.print(" L/min - "); //Imprime L/min
+  Serial.println(" L/min - "); //Imprime L/min
+  Serial.flush();
   
   // Connect to the server (your computer or web page)  
   if (client.connect(server, 80)) {
     client.print("GET /energy/medida.php?");
     client.print("vazao=");
     client.print(vazao);
-    client.println(" HTTP/1.0"); 
     client.println("Host: 192.168.0.100"); //IP do pc aqui.
     client.println("Connection: close");
     client.println(); // Empty line
@@ -42,6 +42,7 @@ void loop() {
 
   else {
     Serial.println("--> connection failed\n");
+    Serial.flush();
   }
   //Dê ao servidor algum tempo para receber os dados e armazená-los. 
   //Eu usei 10 segundos aqui. 
