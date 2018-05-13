@@ -1,10 +1,9 @@
 #include <SPI.h>
 #include <Ethernet.h>
 
-byte mac[] = {
-  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
+byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 IPAddress ip(192,168,0,105); //coloca o IP que vai para o Arduino ai.
-char server[] = "192.168.0.101"; 
+char server[] = "192.168.0.100"; 
 EthernetClient client;
 int Pulso; //Variável para a quantidade de pulsos
 int j=0; //Variável para contagem
@@ -37,18 +36,17 @@ void loop() {
   Serial.print("\n Media por minuto = "); //Imprime a frase valormedia por minuto =
   Serial.print(valormedia); //Imprime o valor da valormedia
   Serial.println(" L/min - "); //Imprime L/min
-  valormedia = 0; //Torna variável valormedia = 0, para uma nova contagem
-  j=0; //Torna a variável 0,para uma nova contagem
+  Serial.flush();
   }
-  
  
   // Connect to the server (your computer or web page)  
   if (client.connect(server, 80)) {
-    client.print("GET /energy/medida.php?");
+    
+    client.print("GET /measurer/medida.php?");
     client.print("vazao=");
     client.print(valormedia);
     client.println(" HTTP/1.0"); 
-    client.println("Host: 192.168.0.101"); //IP do pc aqui.
+    client.println("Host: 192.168.0.100"); //IP do pc aqui.
     client.println("Connection: close");
     client.println(); // Empty line
     client.println(); // Empty line
@@ -57,7 +55,10 @@ void loop() {
 
   else {
     Serial.println("--> connection failed\n");
+    Serial.flush();
   }
+  valormedia = 0; //Torna variável valormedia = 0, para uma nova contagem
+  j=0; //Torna a variável 0,para uma nova contagem
   //Dê ao servidor algum tempo para receber os dados e armazená-los. 
   //Eu usei 10 segundos aqui. 
   //Se você usar um pequeno atraso, o servidor pode não capturar dados porque o Arduino está transmitindo novos dados muito cedo.
