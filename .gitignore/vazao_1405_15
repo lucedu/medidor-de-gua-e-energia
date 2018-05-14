@@ -1,0 +1,75 @@
+#include <SPI.h>
+#include <Ethernet.h>
+
+byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
+IPAddress ip(192,168,0,105); //coloca o IP que vai para o Arduino ai.
+char server[] = "192.168.0.100"; 
+EthernetClient client;
+int Pulso; //Variável para a quantidade de pulsos
+int j;
+double litros;
+double liters;
+double vazao; //Variável para armazenar o valor em L/min
+double valormedia=0; //Variável para tirar a média a cada 1 minuto
+
+void setup() {
+  Serial.begin(9600);
+  Ethernet.begin(mac, ip);
+  pinMode(2, INPUT);
+  attachInterrupt(0, incrpulso, RISING); //Configura a porta digital 2, para interrupção
+}
+
+void loop() {
+  
+  for(j=0; j<=30; j++) {
+    Serial.println(j);
+    Pulso = 0; //Começa do 0 variável para contar os giros das pás internas,em segundos
+    sei(); //liga interrupção
+    delay (2000); //Espera 2 segundos
+    cli(); //Desliga interrupção
+    vazao = Pulso / 7.5; //Converte para Litros/minuto
+
+    litros = vazao / 60;     // Calculo de mililitros
+    liters = liters + litros;//Converte para Litros/minuto 
+    Serial.println(liters);
+    
+    Serial.print(vazao); //Imprime na serial o valor da vazão
+    Serial.println(" L/min - "); //Imprime L/min
+    vazao = 0;
+  }
+  
+  liters = liters/30; //Tira a valormedia dividindo por 60
+  Serial.print("\n Media por minuto = "); //Imprime a frase valormedia por minuto =
+  Serial.print(liters); //Imprime o valor da valormedia
+  Serial.println(" L/min - "); //Imprime L/min
+  Serial.flush();
+ 
+  // Connect to the server (your computer or web page)  
+  if (client.connect(server, 80)) {
+    client.print("GET /measurer/medida.php?");
+    client.print("vazao=");
+    client.print(liters);
+    client.println(" HTTP/1.0"); 
+    client.println("Host: 192.168.0.100"); //IP do pc aqui.
+    client.println("Connection: close");
+    client.println(); // Empty line
+    client.println(); // Empty line
+    client.stop();    // Closing connection to server
+  }
+
+  else {
+    Serial.println("--> connection failed\n");
+    Serial.flush();
+  }
+  liters = 0; //Torna variável valormedia = 0, para uma nova contagem
+  j=0; //Torna a variável 0,para uma nova contagem
+  //Dê ao servidor algum tempo para receber os dados e armazená-los. 
+  //Eu usei 10 segundos aqui. 
+  //Se você usar um pequeno atraso, o servidor pode não capturar dados porque o Arduino está transmitindo novos dados muito cedo.
+  delay(10000);
+}
+
+void incrpulso ()
+{ 
+Pulso++;
+}
