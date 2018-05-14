@@ -1,0 +1,83 @@
+#include <Ethernet.h>
+#include <SPI.h>
+#include <SD.h>
+
+File arquivo;
+byte inicio_ok;
+
+byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }; //mac do Arduino
+IPAddress ip(192,168,0,105); //IP que vai para o Arduino ai
+
+char server[] = "192.168.0.100"; //Servidor Local
+
+EthernetClient client;
+
+//Variáveis
+int Pulso; //Variável para a quantidade de pulsos
+double vazao;
+double litros;
+double liters;
+
+void setup() {
+
+  inicio_ok = 1;
+  
+  Serial.begin(9600);
+  
+  if(!SD.begin(4))
+    {
+      Serial.println("Erro ao iniciar cartão SD!");
+      inicio_ok = 0;
+      return;
+    }
+  
+  Ethernet.begin(mac, ip);
+  pinMode(2, INPUT);
+  attachInterrupt(0, incrpulso,RISING);
+
+  Serial.println("Iniciação Ok!");
+}
+
+void loop() {
+   
+    Pulso = 0; //Começa do 0 variável para contar os giros das pás internas,em segundos
+    sei(); //liga interrupção
+    delay (2000); //Espera 2 segundos
+    cli(); //Desliga interrupção
+
+    vazao = Pulso / 5.5;  
+    litros = vazao / 60;     // Calculo de mililitros
+    liters = liters + litros;//Converte para Litros/minuto  
+
+    Serial.print(liters);
+    Serial.print(" Litro- ");
+    Serial.print (litros);
+    Serial.print(" Litros "); //Imprime L/min
+
+    // Connect to the server (your computer or web page)  
+    if (client.connect(server, 80)) {
+    
+    client.print("GET /measurer/medida.php?");
+    client.print("vazao=");
+    client.print(liters);
+    client.println(" HTTP/1.0"); 
+    client.println("Host: 192.168.0.100"); //IP do pc aqui.
+    client.println("Connection: close");
+    client.println(); // Empty line
+    client.println(); // Empty line
+    client.stop();    // Closing connection to server
+  }
+
+    else {
+    Serial.println("--> connection failed\n");
+    }
+  //Dê ao servidor algum tempo para receber os dados e armazená-los. 
+  //Eu usei 10 segundos aqui. 
+  //Se você usar um pequeno atraso, o servidor pode não capturar dados porque o Arduino está transmitindo novos dados muito cedo.
+  delay(10000);
+  }
+
+void incrpulso ()
+{ 
+Pulso++;
+}
